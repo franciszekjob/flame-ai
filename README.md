@@ -75,7 +75,7 @@ The service provides two main endpoints:
 2.  **OpenTelemetry** records that the CPU is spent almost entirely within a function named `bubbleSort()`.
 3.  **Grafana Pyroscope** generates a Flame Graph where the `bubbleSort` stack is extremely wide, signaling a bottleneck.
 
-### 3. AI Interpretation (The "Magic" Part)
+### 3. AI Interpretation
 When a developer clicks on the Flame Graph, the **MCP Server** sends the function names and execution times to the **LLM**. 
 * **The AI prompt:** "Analyze this profiling data. Why is the application slow?"
 * **The AI response:** "The application is spending 92% of its time in `bubbleSort`. This is an inefficient algorithm for large datasets. I recommend replacing it with `QuickSort` or `MergeSort` to reduce complexity from O(n²) to O(n log n)."
