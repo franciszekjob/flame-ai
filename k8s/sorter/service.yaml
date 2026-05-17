@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sorter
+  namespace: flame-ai
+  labels:
+    app.kubernetes.io/name: sorter
+    app.kubernetes.io/part-of: flame-ai
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: sorter
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP

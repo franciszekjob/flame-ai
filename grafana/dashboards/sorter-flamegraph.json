@@ -1,0 +1,92 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "type": "text",
+      "title": "How to use this dashboard",
+      "gridPos": { "h": 5, "w": 24, "x": 0, "y": 0 },
+      "options": {
+        "mode": "markdown",
+        "content": "## Sorter Flame Graph — AI-assisted bottleneck analysis\n\nThis dashboard visualises CPU profiles collected by **Pyroscope** from the `flame-ai.sorter` service. The bottom panel is an interactive flame graph; the wider a function block is, the more CPU time it consumes.\n\n### To get an AI explanation\n1. Click anywhere on the flame graph below.\n2. Open the panel menu (three dots, top-right of the panel).\n3. Choose **Explain with AI** (provided by the `grafana-llm-app` plugin, configured against OpenAI).\n4. Read the natural-language diagnosis identifying the hot stack frame (expect `bubble_sort`).\n\n### To reproduce load\n```\nkubectl port-forward -n flame-ai svc/sorter 8080:80\nk6 run k6/scenarios/slow-flood.js\n```\n"
+      }
+    },
+    {
+      "type": "flamegraph",
+      "title": "CPU Flame Graph — flame-ai.sorter",
+      "gridPos": { "h": 20, "w": 24, "x": 0, "y": 5 },
+      "datasource": { "type": "grafana-pyroscope-datasource", "uid": "pyroscope" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-pyroscope-datasource", "uid": "pyroscope" },
+          "queryType": "profile",
+          "labelSelector": "{service_name=\"flame-ai.sorter\"}",
+          "profileTypeId": "process_cpu:cpu:nanoseconds:cpu:nanoseconds",
+          "groupBy": []
+        }
+      ],
+      "options": {}
+    },
+    {
+      "type": "timeseries",
+      "title": "CPU samples per second (Pyroscope)",
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 25 },
+      "datasource": { "type": "grafana-pyroscope-datasource", "uid": "pyroscope" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-pyroscope-datasource", "uid": "pyroscope" },
+          "queryType": "metrics",
+          "labelSelector": "{service_name=\"flame-ai.sorter\"}",
+          "profileTypeId": "process_cpu:cpu:nanoseconds:cpu:nanoseconds",
+          "groupBy": []
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2,
+            "showPoints": "never"
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "showLegend": true, "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      }
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "tags": ["flame-ai", "pyroscope"],
+  "templating": { "list": [] },
+  "time": { "from": "now-15m", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Sorter Flame Graph",
+  "uid": "flame-ai-sorter",
+  "version": 1,
+  "weekStart": ""
+}

@@ -94,3 +94,56 @@ When a developer clicks on the Flame Graph, the **MCP Server** sends the functio
 | **Brain** | LLM (e.g., Claude / GPT) | Bottleneck analysis and optimization recommendations. |
 
 ---
+
+## 🚀 Running the Demo
+
+### Prerequisites
+- Docker Desktop
+- `minikube`, `kubectl`, `helm`
+- `k6` (only if running load locally; the in-cluster path uses `k6-operator`)
+- An OpenAI API key
+
+### One-shot setup
+
+```bash
+# 1. Provide your OpenAI key (creates a Kubernetes Secret read by Grafana)
+cp .env.example .env  # then edit .env with your key
+./scripts/create-openai-secret.sh
+
+# 2. Bring everything up (minikube, build, helm, dashboards)
+./scripts/up.sh
+
+# 3. Port-forward Grafana and open the dashboard
+kubectl port-forward -n observability svc/grafana 3000:80
+#   -> http://localhost:3000 (admin / admin) → "Flame AI" folder → "Sorter Flame Graph"
+
+# 4. Generate load (in a separate terminal)
+kubectl port-forward -n flame-ai svc/sorter 8080:80
+BASE_URL=http://localhost:8080 k6 run k6/scenarios/slow-flood.js
+```
+
+### What you should see
+Within ~30 s of starting load, the **CPU Flame Graph — flame-ai.sorter** panel in Grafana shows a wide red plateau for `bubble_sort` (≈90% of CPU time). Click the panel menu → **Explain with AI** and the OpenAI-backed `grafana-llm-app` plugin returns a natural-language diagnosis pointing at `bubble_sort` and recommending Timsort.
+
+### Tear down
+
+```bash
+./scripts/down.sh           # keeps minikube around for the next run
+./scripts/down.sh --purge   # also deletes the minikube cluster
+```
+
+### Layout
+
+| Path | Purpose |
+| :--- | :--- |
+| `app/` | FastAPI "Inefficient Sorter" service. |
+| `Dockerfile` | Container image (python:3.12-slim). |
+| `k8s/sorter/` | Sorter Deployment / Service / ConfigMap / Namespace. |
+| `helm/values-*.yaml` | Pyroscope and Grafana Helm values. |
+| `grafana/dashboards/` | Flame graph dashboard JSON (installed via sidecar). |
+| `grafana/llm-prompts/` | Prompt templates used by the AI explanation feature. |
+| `k6/scenarios/` | Local `k6 run` scripts. |
+| `k6/k8s/` | In-cluster `TestRun` resources. |
+| `scripts/` | `up.sh`, `down.sh`, helpers. |
+
+---

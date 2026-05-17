@@ -1,0 +1,19 @@
+# Minimal Pyroscope values for the flame-ai demo.
+# Single-binary mode, small footprint, filesystem storage.
+pyroscope:
+  replicaCount: 1
+  persistence:
+    enabled: false
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+minio:
+  enabled: false
+
+alloy:
+  enabled: false
