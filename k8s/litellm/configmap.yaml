@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: litellm-config
+  namespace: observability
+data:
+  config.yaml: |
+    model_list:
+      - model_name: gpt-4.1-mini
+        litellm_params:
+          model: gemini/gemini-flash-lite-latest
+          api_key: os.environ/GEMINI_API_KEY
+      - model_name: gpt-4.1
+        litellm_params:
+          model: gemini/gemini-flash-lite-latest
+          api_key: os.environ/GEMINI_API_KEY
+      - model_name: gpt-4
+        litellm_params:
+          model: gemini/gemini-flash-lite-latest
+          api_key: os.environ/GEMINI_API_KEY
+      - model_name: gpt-4-turbo
+        litellm_params:
+          model: gemini/gemini-flash-lite-latest
+          api_key: os.environ/GEMINI_API_KEY
+      - model_name: gpt-3.5-turbo
+        litellm_params:
+          model: gemini/gemini-flash-lite-latest
+          api_key: os.environ/GEMINI_API_KEY
+    general_settings:
+      drop_params: true

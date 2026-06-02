@@ -1,0 +1,14 @@
+apiVersion: 1
+apps:
+  - type: grafana-llm-app
+    disabled: false
+    jsonData:
+      openAI:
+        url: http://litellm.observability.svc.cluster.local:4000
+        provider: openai
+        organizationId: ""
+      vector:
+        enabled: false
+      displayVectorStoreOptions: false
+    secureJsonData:
+      openAIKey: $OPENAI_API_KEY

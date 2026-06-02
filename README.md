@@ -101,16 +101,19 @@ When a developer clicks on the Flame Graph, the **MCP Server** sends the functio
 - Docker Desktop
 - `minikube`, `kubectl`, `helm`
 - `k6` (only if running load locally; the in-cluster path uses `k6-operator`)
-- An OpenAI API key
+- A [Google Gemini API key](https://aistudio.google.com/app/apikey)
 
-### One-shot setup
+> **AI backend:** `grafana-llm-app` talks to an in-cluster **LiteLLM** proxy, which
+> maps OpenAI-format requests to `gemini-1.5-flash` via the Google Gemini API.
+
+### One-shot setup (macOS / Linux)
 
 ```bash
-# 1. Provide your OpenAI key (creates a Kubernetes Secret read by Grafana)
-cp .env.example .env  # then edit .env with your key
-./scripts/create-openai-secret.sh
+# 1. Provide your Gemini key (creates a Kubernetes Secret read by LiteLLM)
+cp .env.example .env  # then edit .env — set GEMINI_API_KEY=AIza...
+./scripts/create-gemini-secret.sh
 
-# 2. Bring everything up (minikube, build, helm, dashboards)
+# 2. Bring everything up (minikube, build, helm, dashboards, LiteLLM)
 ./scripts/up.sh
 
 # 3. Port-forward Grafana and open the dashboard
@@ -122,14 +125,40 @@ kubectl port-forward -n flame-ai svc/sorter 8080:80
 BASE_URL=http://localhost:8080 k6 run k6/scenarios/slow-flood.js
 ```
 
-### What you should see
-Within ~30 s of starting load, the **CPU Flame Graph — flame-ai.sorter** panel in Grafana shows a wide red plateau for `bubble_sort` (≈90% of CPU time). Click the panel menu → **Explain with AI** and the OpenAI-backed `grafana-llm-app` plugin returns a natural-language diagnosis pointing at `bubble_sort` and recommending Timsort.
+### One-shot setup (Windows — PowerShell)
 
-### Tear down
+```powershell
+# 1. Provide your Gemini key
+Copy-Item .env.example .env   # edit .env — set GEMINI_API_KEY=AIza...
+.\scripts\create-gemini-secret.ps1
+
+# 2. Bring everything up
+.\scripts\up.ps1
+
+# 3. Port-forward Grafana
+kubectl port-forward -n observability svc/grafana 3000:80
+
+# 4. Generate load (separate terminal)
+kubectl port-forward -n flame-ai svc/sorter 8080:80
+$env:BASE_URL = "http://localhost:8080"
+k6 run k6\scenarios\slow-flood.js
+```
+
+### What you should see
+Within ~30 s of starting load, the **CPU Flame Graph — flame-ai.sorter** panel in Grafana shows a wide red plateau for `bubble_sort` (≈90% of CPU time). Click the panel menu → **Explain with AI** and the Gemini-backed `grafana-llm-app` plugin returns a natural-language diagnosis pointing at `bubble_sort` and recommending Timsort.
+
+### Tear down (macOS / Linux)
 
 ```bash
 ./scripts/down.sh           # keeps minikube around for the next run
 ./scripts/down.sh --purge   # also deletes the minikube cluster
+```
+
+### Tear down (Windows)
+
+```powershell
+.\scripts\down.ps1           # keeps minikube around for the next run
+.\scripts\down.ps1 -Purge    # also deletes the minikube cluster
 ```
 
 ### Layout

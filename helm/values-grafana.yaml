@@ -1,9 +1,10 @@
 # Grafana values for the flame-ai demo.
 # - Pyroscope datasource pre-provisioned
-# - grafana-llm-app installed and configured against OpenAI
+# - grafana-llm-app routes through the in-cluster LiteLLM proxy, which maps
+#   OpenAI model names to gemini-1.5-flash via the Gemini API
 # - Dashboard sidecar enabled (picks up ConfigMaps labelled grafana_dashboard=1)
-# - OpenAI key supplied via the `grafana-llm-secrets` Secret created out-of-band
-#   by scripts/create-openai-secret.sh
+# - Gemini key lives in `gemini-llm-secrets`; LiteLLM reads it directly.
+#   `grafana-llm-secrets` carries only a placeholder value for the plugin.
 
 adminUser: admin
 adminPassword: admin
@@ -30,26 +31,8 @@ datasources:
         isDefault: true
         editable: true
 
-# Configure the grafana-llm-app plugin via provisioning. The OPENAI_API_KEY env
-# var is injected via envFromSecret above; the plugin reads it through
-# secureJsonData substitution.
-plugins_provisioning:
-  apps.yaml:
-    apiVersion: 1
-    apps:
-      - type: grafana-llm-app
-        disabled: false
-        jsonData:
-          openAI:
-            url: https://api.openai.com
-            provider: openai
-            organizationId: ""
-          vector:
-            enabled: false
-          displayVectorStoreOptions: false
-        secureJsonData:
-          openAIKey: $OPENAI_API_KEY
-
+# Plugin provisioning lives in grafana/provisioning/apps.yaml — loaded into the
+# grafana-plugins-provisioning ConfigMap by install-stack.sh / install-stack.ps1.
 # Mount the provisioning YAML into the right path
 extraConfigmapMounts:
   - name: grafana-plugins-provisioning
@@ -70,19 +53,6 @@ sidecar:
       type: file
       disableDelete: false
       allowUiUpdates: true
-
-dashboardProviders:
-  dashboardproviders.yaml:
-    apiVersion: 1
-    providers:
-      - name: flame-ai
-        orgId: 1
-        folder: Flame AI
-        type: file
-        disableDeletion: false
-        editable: true
-        options:
-          path: /tmp/dashboards
 
 resources:
   requests:

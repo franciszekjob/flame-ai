@@ -22,18 +22,10 @@ helm repo update >/dev/null
 echo "==> Creating namespace ${NAMESPACE}"
 kubectl get ns "${NAMESPACE}" >/dev/null 2>&1 || kubectl create ns "${NAMESPACE}"
 
-# The grafana-plugins-provisioning ConfigMap must exist before the Grafana pod
-# starts, because the values reference it as an extraConfigmapMounts entry.
-echo "==> Rendering grafana-plugins-provisioning ConfigMap"
-PROVISIONING_YAML="$(python3 - <<'PY'
-import yaml, pathlib
-values = yaml.safe_load(pathlib.Path("helm/values-grafana.yaml").read_text())
-print(yaml.safe_dump(values.get("plugins_provisioning", {}), sort_keys=False))
-PY
-)"
+echo "==> Applying grafana-plugins-provisioning ConfigMap"
 kubectl create configmap grafana-plugins-provisioning \
   --namespace "${NAMESPACE}" \
-  --from-literal=apps.yaml="${PROVISIONING_YAML}" \
+  --from-file=apps.yaml="${ROOT_DIR}/grafana/provisioning/apps.yaml" \
   --dry-run=client -o yaml | kubectl apply -f -
 
 echo "==> Installing/upgrading Pyroscope"
@@ -42,14 +34,26 @@ helm upgrade --install pyroscope grafana/pyroscope \
   --values "${ROOT_DIR}/helm/values-pyroscope.yaml" \
   --wait --timeout 5m
 
-echo "==> Ensuring grafana-llm-secrets exists (placeholder if user has not run create-openai-secret.sh)"
+echo "==> Ensuring grafana-llm-secrets exists (placeholder; real key is in gemini-llm-secrets)"
 if ! kubectl get secret grafana-llm-secrets -n "${NAMESPACE}" >/dev/null 2>&1; then
-  echo "    NOTE: no grafana-llm-secrets found. Creating placeholder with empty OPENAI_API_KEY."
-  echo "    Run scripts/create-openai-secret.sh to install a real key."
   kubectl create secret generic grafana-llm-secrets \
     --namespace "${NAMESPACE}" \
-    --from-literal=OPENAI_API_KEY=""
+    --from-literal=OPENAI_API_KEY="litellm"
 fi
+
+echo "==> Ensuring gemini-llm-secrets exists (run scripts/create-gemini-secret.sh to set real key)"
+if ! kubectl get secret gemini-llm-secrets -n "${NAMESPACE}" >/dev/null 2>&1; then
+  echo "    NOTE: no gemini-llm-secrets found. Creating placeholder with empty GEMINI_API_KEY."
+  echo "    Run scripts/create-gemini-secret.sh to install your Gemini API key."
+  kubectl create secret generic gemini-llm-secrets \
+    --namespace "${NAMESPACE}" \
+    --from-literal=GEMINI_API_KEY=""
+fi
+
+echo "==> Deploying LiteLLM proxy"
+kubectl apply -f "${ROOT_DIR}/k8s/litellm/configmap.yaml"
+kubectl apply -f "${ROOT_DIR}/k8s/litellm/deployment.yaml"
+kubectl apply -f "${ROOT_DIR}/k8s/litellm/service.yaml"
 
 echo "==> Installing/upgrading Grafana"
 helm upgrade --install grafana grafana/grafana \

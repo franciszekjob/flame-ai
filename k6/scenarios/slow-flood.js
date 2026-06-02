@@ -6,7 +6,8 @@
 import http from 'k6/http';
 import { sleep } from 'k6';
 
-const BASE_URL = __ENV.BASE_URL || 'http://sorter.flame-ai.svc.cluster.local';
+//const BASE_URL = __ENV.BASE_URL || 'http://sorter.flame-ai.svc.cluster.local';
+const BASE_URL="http://localhost:8080";
 const N = __ENV.N || '5000';
 
 export const options = {
